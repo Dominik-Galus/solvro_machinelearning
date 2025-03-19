@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "solvro_machinelearning"
+authors = [
+    {name = "Dominik Galus"},
+]
+version = "0.1.0"
+description = "Task for Solvro recruitment"
+readme = "README.md"
+requires-python = ">=3.10"
+dynamic = ["dependencies"]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+include-package-data = true
+
+[tool.setuptools.dynamic]
+dependencies = { file = "requirements/base.txt"}
+
+[tool.ruff]
+lint.select = ["ALL", "E302"]
+line-length=120
+lint.ignore = [
+    "D100",
+    "D101",
+    "D102",
+    "D103",
+    "D104",
+    "D105",
+    "D107",
+    "N818",
+    "D213",
+    "D211",
+    "S311",
+    "FIX002",
+    "TD003",
+    "CPY001",
+]
+preview = true

@@ -1,8 +1,8 @@
 import operator
 
 import pandas as pd
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.neighbors import NearestNeighbors
+from sklearn.feature_extraction.text import TfidfVectorizer  # type: ignore[import-untyped]
+from sklearn.neighbors import NearestNeighbors  # type: ignore[import-untyped]
 
 
 def fill_null_tags(df: pd.DataFrame) -> pd.DataFrame:  # noqa: PLR0914
@@ -14,10 +14,10 @@ def fill_null_tags(df: pd.DataFrame) -> pd.DataFrame:  # noqa: PLR0914
         ingredient_names = [ing["name"].lower() for ing in row["ingredients"]]
         features.append(" ".join(ingredient_names))
 
-    for i, row in enumerate(df.itertuples()):
+    for i, row in enumerate(df.itertuples()):  # type: ignore[assignment]
         features[i] += " " + row.instructions
 
-    for i, row in enumerate(df.itertuples()):
+    for i, row in enumerate(df.itertuples()):  # type: ignore[assignment]
         features[i] += " " + str(row.category) + " " + str(row.glass)
 
     vectorizer = TfidfVectorizer(stop_words="english", min_df=2, max_features=500)
@@ -37,7 +37,7 @@ def fill_null_tags(df: pd.DataFrame) -> pd.DataFrame:  # noqa: PLR0914
     for neighbor_indices in indices:
         neighbor_rows = [df_with_tags.iloc[index_to_position[idx]] for idx in df_with_tags.index[neighbor_indices]]
 
-        tag_counts = {}
+        tag_counts: dict[str, int] = {}
         for row in neighbor_rows:
             for tag in row["tags"]:
                 tag_counts[tag] = tag_counts.get(tag, 0) + 1
@@ -45,8 +45,8 @@ def fill_null_tags(df: pd.DataFrame) -> pd.DataFrame:  # noqa: PLR0914
         common_tags = [tag for tag, count in tag_counts.items() if count >= 2]  # noqa: PLR2004
 
         if not common_tags:
-            common_tags = sorted(tag_counts.items(), key=operator.itemgetter(1), reverse=True)[:3]
-            common_tags = [tag for tag, _ in common_tags]
+            common_tags = sorted(tag_counts.items(), key=operator.itemgetter(1), reverse=True)[:3]  # type: ignore[assignment]
+            common_tags = [tag for tag, _ in common_tags]  # type: ignore[misc, has-type]
 
         imputed_tags.append(common_tags)
 

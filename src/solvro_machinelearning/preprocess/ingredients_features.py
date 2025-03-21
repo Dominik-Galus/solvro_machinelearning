@@ -85,3 +85,34 @@ def download_ingredients_images(directory_path: str, images: pd.DataFrame) -> No
         except requests.exceptions.RequestException as e:
             msg: str = "Error occured"
             raise requests.HTTPError(msg) from e
+
+
+def extract_ingredients_with_clusters(df: pd.DataFrame) -> pd.DataFrame:
+    df_result = df.copy()
+
+    ingredient_counts = []
+    alcohol_ingredients = []
+    non_alcohol_ingredients = []
+    ingredient_clusters = []
+
+    for _, row in df.iterrows():
+        ingredients = row["ingredients"]
+
+        ingredient_counts.append(len(ingredients))
+
+        alcoholic_count = sum(1 for ing in ingredients if ing.get("alcohol") == 1)
+        alcohol_ingredients.append(alcoholic_count)
+
+        non_alcoholic_count = sum(1 for ing in ingredients if ing.get("alcohol") == 0)
+        non_alcohol_ingredients.append(non_alcoholic_count)
+
+        clusters = [ing.get("cluster", -1) for ing in ingredients]
+        ingredient_clusters.append(clusters)
+
+    df_result["ingredient_count"] = ingredient_counts
+    df_result["alcoholic_ingredients"] = alcohol_ingredients
+    df_result["non_alcoholic_ingredients"] = non_alcohol_ingredients
+    df_result["ingredient_clusters"] = ingredient_clusters
+    df_result["alcoholic_ratio"] = df_result["alcoholic_ingredients"] / df_result["ingredient_count"]
+
+    return df_result

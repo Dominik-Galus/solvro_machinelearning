@@ -1,10 +1,7 @@
 from pathlib import Path
 
-import matplotlib.pyplot as plt
 import numpy as np
-import seaborn as sns
 import torch
-from kneed import KneeLocator  # type: ignore[import-untyped]
 from PIL import Image
 from sklearn.cluster import KMeans  # type: ignore[import-untyped]
 from sklearn.metrics import (  # type: ignore[import-untyped]
@@ -20,7 +17,7 @@ from transformers import (  # type: ignore[import-untyped]
     CLIPProcessor,
 )
 
-from solvro_machinelearning.config.reducers import REDUCTION_METHODS
+from solvro_machinelearning.metrics.elbow_metrics import elbow_optimizer, plot_evaluation, reduce_dimensions
 
 
 def ingredients_image_cluster_score(  # noqa: PLR0914
@@ -43,7 +40,7 @@ def ingredients_image_cluster_score(  # noqa: PLR0914
     for model_name, features in features_dict.items():
         if reduction_methods:
             for reduction_method in reduction_methods:
-                reduced_features = _reduce_dimensions(features, reduction_method)
+                reduced_features = reduce_dimensions(features, reduction_method)
 
                 inertias = []
                 for k in range(1, 11):
@@ -143,58 +140,3 @@ def _extract_features(
                 outputs = model(**inputs).logits
         features.append(outputs.cpu().numpy())
     return np.vstack(features)
-
-
-def _reduce_dimensions(features: np.ndarray, method: str) -> np.ndarray:
-    reducer = REDUCTION_METHODS.get(method)
-    if not reducer:
-        msg = f"Unknown reduction method: {method}"
-        raise ValueError(msg)
-    return reducer.fit_transform(features)  # type: ignore[no-any-return]
-
-
-def plot_evaluation(sil: list[float], cal: list[float], title: str, x: range | list[int] = range(2, 11)) -> None:  # noqa: B008
-    _, ax = plt.subplots(1, 2, figsize=(20, 8), dpi=100)
-    ax[0].plot(x, sil, color="#99582a", marker="o", ms=15, mfc="#6f1d1b")
-    ax[1].plot(x, cal, color="#99582a", marker="o", ms=15, mfc="#6f1d1b")
-    ax[0].set_xlabel("Number of Clusters", labelpad=20)
-    ax[0].set_ylabel("Silhouette Coefficient", labelpad=20)
-    ax[1].set_xlabel("Number of Clusters", labelpad=20)
-    ax[1].set_ylabel("Calinski Harabasz Coefficient", labelpad=20)
-
-    best_sil_idx = np.argmax(sil)
-    best_cal_idx = np.argmax(cal)
-
-    ax[0].annotate(f"Best: {x[best_sil_idx]} clusters",
-                  xy=(x[best_sil_idx], sil[best_sil_idx]),
-                  xytext=(x[best_sil_idx], sil[best_sil_idx] * 0.9),
-                  arrowprops={"facecolor": "#6f1d1b", "shrink": 0.05},
-                  ha="center")
-
-    ax[1].annotate(f"Best: {x[best_cal_idx]} clusters",
-                  xy=(x[best_cal_idx], cal[best_cal_idx]),
-                  xytext=(x[best_cal_idx], cal[best_cal_idx] * 0.9),
-                  arrowprops={"facecolor": "#6f1d1b", "shrink": 0.05},
-                  ha="center")
-
-    plt.suptitle(f"Evaluate {title} Clustering", y=0.92)
-    plt.tight_layout(pad=3)
-    plt.show()
-
-
-def elbow_optimizer(inertias: list[float], title: str) -> None:
-    plt.figure(figsize=(10, 6))
-    kl = KneeLocator(range(1, 11), inertias, curve="convex", direction="decreasing")
-    plt.style.use("fivethirtyeight")
-    sns.lineplot(x=range(1, 11), y=inertias, color="#99582a")
-    plt.xticks(range(1, 11))
-    plt.xlabel("Number of Clusters", labelpad=20)
-    plt.ylabel("Inertia", labelpad=20)
-    plt.title(f"Elbow Method for {title}", y=1)
-
-    if kl.elbow is not None:
-        plt.axvline(x=kl.elbow, color="#6f1d1b", label=f"Optimal clusters: {kl.elbow}", ls="--")
-        plt.legend()
-
-    plt.tight_layout()
-    plt.show()
